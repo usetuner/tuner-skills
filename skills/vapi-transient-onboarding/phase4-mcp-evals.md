@@ -1,38 +1,80 @@
 # Phase 4 — Connect the Tuner MCP & First Evals
 
-> Announce: "Step 4 of 5 — setting up your first evals." (Steps 4 and 5 = connect + evaluate; the wrap-up below is step 5.)
+> Announce: "Step 4 of 5 — connecting the Tuner MCP and setting up your first evals." (Steps 4 and 5 = connect + evaluate; the wrap-up below is step 5.)
+
+Canonical docs (source of truth, may be newer than this skill):
+https://docs.usetuner.ai/docs/mcp/set-up-your-agent
 
 ## 4a. Connect the Tuner MCP server
 
-1. Claude Code: `claude mcp add tuner --transport http https://api.usetuner.ai/mcp/` — or add the entry to the project's `.mcp.json` so the whole team gets it. Other agents: same URL in their MCP config.
-2. Auth uses the same `TUNER_API_KEY` from Phase 2.
-3. Verify by listing the Tuner tools and fetching the Custom API agent — a successful fetch is the proof. If the MCP is unavailable, fall back to the REST API (base URL + bearer key) and tell the user which mode you're in.
+The Tuner MCP server lives at `https://api.usetuner.ai/mcp/`. IDEs authenticate with the `TUNER_API_KEY` from Phase 2 as a Bearer token; chatbots (e.g. Claude's web/desktop app) use OAuth instead and don't need a key. Detect which agent you're running in and configure accordingly — don't ask the user which one, you already know.
 
-## 4b. Propose evals — don't ask "what's a good call?"
+**Cursor** — add to `mcp.json` (Settings → Tools & MCP → Add Custom MCP):
 
-You already know what their agent does: you read the system prompt(s), the tools, and the configured workflows in Phase 0, and you've seen a real transcript in Phase 3. Use that.
+```json
+{
+  "mcpServers": {
+    "tuner": {
+      "type": "streamableHttp",
+      "url": "https://api.usetuner.ai/mcp/",
+      "headers": {
+        "Authorization": "Bearer YOUR_TUNER_API_KEY"
+      }
+    }
+  }
+}
+```
 
-1. Read `references/eval-starter-packs.md` and pick the vertical that matches what you observed (reception/triage, scheduling, support, orders, collections…). If nothing fits, compose from the cross-vertical evals at the top of that file.
-2. Adapt the pack to *their* agent: reference their actual tool names, their actual workflows, their agent's operating language (evals must handle non-English transcripts — German, French, Arabic, Spanish — whenever the agent speaks one; write the eval prompt to expect it).
-3. If their metadata (Phase 1) carries per-call configuration — prompt variants, enabled tools, workflows — scope evals to it. One eval per meaningful metadata dimension keeps context tight and makes evals adapt to each call's own configuration instead of judging every call by one global standard. This is the payoff of the metadata work.
-4. **Present-then-confirm:** show the proposed evals as a compact table — name, what it checks, why it matters *for this agent* — starting with 2–4, not ten. One trusted eval beats a wall of red/green noise. Ask once: "Set these up? (yes / adjust / add)".
+**Claude Code** — run, or add the equivalent to the project's `.mcp.json` so the whole team gets it:
 
-Eval-writing principles (apply to every prompt you create; the reference file elaborates):
+```bash
+claude mcp add tuner https://api.usetuner.ai/mcp/ --transport http --header "Authorization: Bearer YOUR_TUNER_API_KEY"
+```
 
-- **Spirit over letter.** Instructions in the agent's prompt describe intent; evaluate the intent, not the literal wording.
-- **Effort over outcome.** Connection drops, STT failures, and caller confusion aren't the agent's fault — evaluate whether the agent was handling it correctly.
-- **Closed failure lists.** State exactly what counts as a failure; open-ended criteria make LLM judges either pass everything or invent failures.
-- **Expect a DO-NOT-FLAG round.** After real calls flow through, some "failures" will turn out to be accepted behavior; refining exclusions is normal, not a defect.
+**Antigravity** — `...` menu → Manage MCP Servers → View raw config → add to `mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "tuner": {
+      "serverUrl": "https://api.usetuner.ai/mcp/",
+      "headers": {
+        "Authorization": "Bearer YOUR_TUNER_API_KEY",
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}
+```
+
+**Other MCP-capable agents:** same URL and Bearer header pattern, adapted to that agent's MCP config format.
+
+**Never hardcode the key in the MCP config committed to git** unless the project's own `.mcp.json` convention already expects secrets there — prefer an env-var reference if the tool supports it, and flag it to the user either way.
+
+**Verify the connection:** list the Tuner tools and fetch the Custom API agent created in Phase 2 — a successful fetch is the proof, not just "the config looks right." If the MCP is unavailable or the handshake fails, fall back to the REST API (base URL + Bearer key from Phase 2) for the rest of this phase and tell the user which mode you're in.
+
+## 4b. Run the setup prompt — don't hand-roll evals
+
+Once connected, fetch and follow the **`tuner_setup_agent`** prompt from the Tuner MCP server (list prompts if you need to discover the exact name). This is Tuner's own guided flow for configuring an agent — it already knows how to walk through call outcomes, user intents, data-extraction fields, evals, red flags, and alerts; you do not need a static eval library or vertical starter pack to seed it.
+
+What you bring to that flow that the prompt can't infer on its own:
+
+- **What their agent actually does** — the system prompt(s), tools, and configured workflows you read in Phase 0.
+- **A real transcript** — the Phase 3 verification call, so the prompt's questions get answered from evidence instead of guesses.
+- **Per-call configuration** — if metadata (Phase 1) carries prompt variants, enabled tools, or workflows, mention it: evals should scope to the relevant metadata field so each call is judged against *its own* configuration, not one global standard.
+- **Language.** If the agent operates in German, French, Spanish, Arabic, or any non-English language, say so explicitly — evals need to judge in that language and quote evidence from the transcript as written.
+
+Follow the prompt's own flow for how many evals to propose and how to present them for approval; don't skip its confirmation steps.
 
 ## 4c. Run the first eval — on the real call
 
-Create the confirmed evals via the MCP tools, then run them against the Phase 3 test call and show the scores with the evidence. A number attached to a call they just made themselves is the aha-moment.
+Once evals are created via the MCP tools, run them against the Phase 3 test call and show the scores with the evidence. A number attached to a call they just made themselves is the aha-moment.
 
-**Cost guard:** if the user asks to evaluate historical calls, count them first. More than 100 → report the number and get explicit approval before running anything. High-volume agents log thousands of calls a day; never bulk-evaluate by default.
+**Cost guard:** if the user asks to evaluate historical calls (e.g. calls already in the dashboard from a native Vapi agent, or calls sent in outside this flow), count them first. More than 100 → report the number and get explicit approval before running anything. High-volume agents log thousands of calls a day; never bulk-evaluate by default.
 
 ## 4d. Run the agent diagnosis — end with insight, not a checklist
 
-With calls in the dashboard (especially after a backfill) and evals scored, run Tuner's **agent diagnosis** through the MCP (discover the diagnosis tool/prompt by listing the tools; the dashboard also exposes a copyable diagnosis prompt if the tool isn't available). Present the result as findings about THEIR agent:
+With at least one call in the dashboard and evals scored, run Tuner's **agent diagnosis** through the MCP — discover the diagnosis tool/prompt by listing what's available (see [Diagnose Your Agent](https://docs.usetuner.ai/docs/mcp/diagnose-your-agent); the dashboard also exposes a copyable diagnosis prompt if the tool isn't available). Present the result as findings about THEIR agent:
 
 - overall health (success rate, top failure drivers)
 - the 2–3 most impactful issues found, each with a transcript example
@@ -40,7 +82,7 @@ With calls in the dashboard (especially after a backfill) and evals scored, run 
 
 This is the closing aha-moment: they came for an integration and leave with an analysis of their agent they didn't have this morning. If they want a suggested change applied, apply it — and suggest verifying it with Tuner's simulation feature in the dashboard before rolling it out broadly.
 
-If too few calls exist for a meaningful diagnosis (no backfill, one test call), skip this honestly — say the diagnosis becomes worthwhile after a few days of calls or a backfill, and move to the receipt.
+If too few calls exist for a meaningful diagnosis (just the one test call), skip this honestly — say the diagnosis becomes worthwhile after a few days of real call volume, and move to the receipt.
 
 ## 4e. Wrap-up — the receipt
 
@@ -51,7 +93,7 @@ End with a concrete receipt, not "all set":
 - ✅ checklist: file copied verbatim · config in env vars, nothing committed · one-line wiring (serverless-safe if relevant) · metadata mapped from their per-call config · real call visible with transcript/recording/metadata · MCP connected · N evals live, first scores shown
 - The one-liner of what happens from now on: **every finished Vapi call automatically appears in Tuner and gets evaluated — nothing more to do per call.**
 - Dashboard link to their agent.
-- What's next (pick what fits what you learned about them, one line each): alerts (latency/cost/duration/eval failures), version comparison across their prompt variants via metadata, simulated test calls from the Tuner dashboard — in the agent's own language and accents — to test prompt changes without dialing anyone, and backfill (Phase 3b) if they skipped it.
+- What's next (pick what fits what you learned about them, one line each): alerts (latency/cost/duration/eval failures), version comparison across their prompt variants via metadata, simulated test calls from the Tuner dashboard — in the agent's own language and accents — to test prompt changes without dialing anyone, and re-running `tuner_setup_agent` later to refine outcomes/intents/evals as the agent evolves.
 
 ---
 

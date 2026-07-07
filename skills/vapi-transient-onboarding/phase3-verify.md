@@ -19,4 +19,4 @@ When it lands, say so plainly — this is the moment the product becomes real: e
 
 **Do not proceed until one real call is visible in Tuner with transcript, recording, and metadata attached.** "The code looks right" does not pass this gate.
 
-Announce: "Step 3 done." Then offer the optional backfill — read [phase3b-backfill.md](phase3b-backfill.md) — before continuing to [phase4-mcp-evals.md](phase4-mcp-evals.md).
+Announce: "Step 3 done." Then continue to [phase4-mcp-evals.md](phase4-mcp-evals.md).

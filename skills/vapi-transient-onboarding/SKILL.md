@@ -1,14 +1,6 @@
 ---
 name: vapi-transient-onboarding
-description: >
-  Complete guided onboarding for connecting Vapi transient (inline, call-time)
-  assistants to Tuner for call observability and evals. Use this skill whenever
-  the user wants to set up Tuner, integrate Tuner with Vapi, send Vapi calls to
-  Tuner, add observability, monitoring, testing, or evals to a Vapi voice
-  agent, or mentions usetuner, send_to_tuner, or a Tuner API key — even if they
-  only say "try Tuner" or "get started with Tuner". Installs the drop-in
-  integration in their Node.js server, configures Tuner API keys, verifies with
-  a real call, connects the Tuner MCP server, and creates the first evals.
+description: Sets up Tuner for a Vapi voice agent.
 compatibility: Node.js 18+ Vapi server (built-in fetch required). A Tuner account (https://usetuner.ai).
 metadata:
   author: tuner
@@ -37,7 +29,7 @@ The user's time is the scarce resource. Read the codebase instead of asking abou
 1. Paste Tuner keys / do the dashboard clicks (Phase 2)
 2. Approve one compact diff + metadata object (Phase 1)
 3. Make one test call (Phase 3)
-4. Approve the proposed eval pack (Phase 4)
+4. Walk through the Tuner MCP's setup prompt and approve the resulting evals (Phase 4)
 
 Never ask a generic "ready to continue?". When a genuine decision is needed, ask ONE concrete question that carries the decision ("Found an existing `end-of-call-report` handler in `src/webhooks/vapi.ts` — wire Tuner in there?"). Present-then-confirm beats interrogate: show what you're about to do as a compact summary, get one yes.
 
@@ -56,8 +48,7 @@ Execute **one phase at a time, in order**. For each phase:
 | 1 | [phase1-install-wire.md](phase1-install-wire.md) | Copy integration, wire one line, auto-map metadata | User approved the diff |
 | 2 | [phase2-keys.md](phase2-keys.md) | Tuner account + 4 config values into env vars | Config loads, no secrets in code |
 | 3 | [phase3-verify.md](phase3-verify.md) | One real call, end to end | Call visible in Tuner dashboard |
-| 3b | [phase3b-backfill.md](phase3b-backfill.md) | *(optional, offer it)* Backfill historical Vapi calls so the dashboard opens full of their real data | Sample of 5 verified, batch reported |
-| 4 | [phase4-mcp-evals.md](phase4-mcp-evals.md) | Connect Tuner MCP, first evals, agent diagnosis | One eval scored a real call |
+| 4 | [phase4-mcp-evals.md](phase4-mcp-evals.md) | Connect Tuner MCP, run its setup prompt for evals, agent diagnosis | One eval scored a real call |
 
 **Speak the user's language.** If the user writes in German (or any other language), run the whole onboarding in it — announcements, confirmations, the receipt. The phase files are instructions to you, not scripts to recite.
 
@@ -71,8 +62,7 @@ Execute **one phase at a time, in order**. For each phase:
 
 ## Reference files
 
-- `references/eval-starter-packs.md` — recommended eval sets by agent vertical; read in Phase 4.
 - `references/troubleshooting.md` — diagnose from the integration's log lines; read when Phase 3 fails.
+- `references/tuner-docs.md` — links to the Tuner docs (MCP, evals, diagnosis, Vapi integrations) for anything not covered in this skill.
 - `assets/` — the canonical integration file(s) to copy.
-- `scripts/backfill_from_vapi.ts` — adapt-and-run starting point for Phase 3b.
 

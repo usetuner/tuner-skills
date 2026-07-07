@@ -6,7 +6,7 @@ Agent Skills for [Tuner](https://usetuner.ai) — observability and evals for vo
 
 | Skill | What it does |
 | --- | --- |
-| [vapi-transient-onboarding](skills/vapi-transient-onboarding) | Guided setup for Vapi **transient** (inline, call-time) assistants on Node.js: installs the drop-in integration with a one-line change to your webhook, maps your per-call configuration into metadata automatically, verifies with a real call, optionally **backfills your recent call history** so the dashboard opens full of your production data, connects the Tuner MCP server, proposes a first eval pack tailored to your agent, and closes with an **agent-health diagnosis** of your real calls. Zero to evaluated calls in ~15 minutes. |
+| [vapi-transient-onboarding](skills/vapi-transient-onboarding) | Guided setup for Vapi **transient** (inline, call-time) assistants on Node.js: installs the drop-in integration with a one-line change to your webhook, maps your per-call configuration into metadata automatically, verifies with a real call, connects the Tuner MCP server and runs its setup flow to create evals tailored to your agent, and closes with an **agent-health diagnosis** of your real calls. Zero to evaluated calls in ~15 minutes. |
 
 ## Quick start
 
